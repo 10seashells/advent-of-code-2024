@@ -6,7 +6,6 @@ sum = 0
 with open('3/input.txt') as f:
     text = ''.join(f.readlines())
 
-txt = "mul(1,1)"
 muls = re.findall("mul\(\d+,\d+\)|do\(\)|don't\(\)", text)
 
 do = True
