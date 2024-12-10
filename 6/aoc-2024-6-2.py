@@ -90,16 +90,16 @@ map = copy.deepcopy(original_map)
 for i in range(len(original_moves)-1):
     
     #reset previous placed obstacle
-    if not (prev_pos[0]==-1 and prev_pos[1]):
+    if not (prev_pos[0]==-1 and prev_pos[1]==-1):
         map[prev_pos[1]][prev_pos[0]]='.'
     #reset previous guard
     map[y][x]='.'
 
     pos = original_moves[i+1]
-    x = original_moves[i][0]
-    y = original_moves[i][1]
-    moves = [[x,y]]
-    map[y][x] = original_guards[i]
+    x = first_move[0]
+    y = first_move[1]
+    moves = [first_move]
+    map[first_move[1]][first_move[0]] = '^'
     map[pos[1]][pos[0]] = '#'
     if pos in obstacles:
         prev_pos=pos
@@ -121,26 +121,3 @@ for i in range(len(original_moves)-1):
     prev_pos=pos
 
 print('obstacles:',obstacles)
-print(len(obstacles))
-
-unique_obstacles = []
-for pos in obstacles:
-    if pos not in unique_obstacles:
-        unique_obstacles.append(pos)
-
-print('unique_obstacles:',unique_obstacles)
-print(len(unique_obstacles))
-
-print(first_move in obstacles)
-'''
-3,6
-6,7
-7,7
-1,8
-3,8
-7,9
-
-
-1685 too high
-1684 too high
-'''
