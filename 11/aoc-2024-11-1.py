@@ -1,5 +1,5 @@
 stones = []
-with open('11/input_small.txt') as f:
+with open('11/input.txt') as f:
     for line in f.readlines():
         stones = [int(x) for x in line.split(' ')]
 
@@ -17,6 +17,6 @@ def blink():
             stones[i] *= 2024
         i +=1
 
-for i in range(6):
+for i in range(25):
     blink()
 print(len(stones))
