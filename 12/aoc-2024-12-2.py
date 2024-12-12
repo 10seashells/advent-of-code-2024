@@ -1,139 +1,195 @@
 import copy
 
 map = []
-with open('12/input_tiny.txt') as f:
+with open('12/input_tiny_6.txt') as f:
     for line in f.readlines():
         map.append(line.strip())
-
-def is_valid_loc_bool(loc):
-    if (loc[0] in range(len(map)) and 
-        loc[1] in range(len(map[0]))):
-        return True
-    return False
-
-def is_valid_loc(loc):
-    if (loc[0] in range(len(map)) and 
-        loc[1] in range(len(map[0]))):
-        return loc
-    return []
-
-def get_dir_value(plot, dir):
-    pos = [sum(x) for x in zip(plot.loc, dir)]
-    if (pos[0] in range(len(plot_map)) and 
-        pos[1] in range(len(plot_map[0]))):
-        return plot_map[pos[0]][pos[1]]
-    return False
-
-class Plot:
-    def __init__(self, name, loc):
-        self.name = name
-        self.loc = loc
-
-    def __str__(self):
-        return f"{self.name}({self.loc})"
-    
-    def get_sides(self):
-        sides = [x for x in [self.up,self.down,self.left,self.right] if x]
-        return sides
-    
-class Region:
-    def __init__(self, name, id):
-        self.id = id
-        self.name = name
-        self.plots = []
-    def __str__(self):
-        return f"{self.plots}"
-    
-
-
-
-plot_map = []
-def create_plots():
-    global plot_map
-    plot_map = [[Plot(map[i][j],[i,j]) for i in range(len(map))] for j in range(len(map[0]))]
-    for i,e in enumerate(plot_map):
-        for j,plot in enumerate(e):
-            plot.up = get_dir_value(plot,[-1,0])
-            plot.down = get_dir_value(plot,[1,0])
-            plot.left = get_dir_value(plot,[0,-1])
-            plot.right = get_dir_value(plot,[0,1])
-    print(plot_map)
-            
-
+print(map)
 groups = {}
 def create_groups():
-    global plot_map
-    print(plot_map)
-    for i,e in enumerate(plot_map):
-        print('creating groups')
-        for j,plot in enumerate(e):
-            names = [x for x in groups.keys() if x[0]==plot.name[0]]
-            print('names:',names)
+    for i,e in enumerate(map):
+        for j,f in enumerate(e):
+            loc = [i,j]
+            names = [x for x in groups.keys() if x[0]==f]
             if len(names)==0: 
-                print('new group created')
-                groups[plot.name+'-'+str(i)+'-'+str(j)] = create_groups_inner([],plot.name[0],plot)
+                groups[f+'-'+str(i)+'-'+str(j)] = create_groups_inner([],f,loc)
             else:
                 is_counted = False
                 for name in names:
-                    if plot in groups[name]:
+                    if loc in groups[name]:
                         is_counted = True
                         break
                 if not is_counted:
-                    print('added to group')
-                    groups[plot.name+'-'+str(i)+'-'+str(j)] = create_groups_inner([],plot.name[0],plot)
+                    groups[f+'-'+str(i)+'-'+str(j)] = create_groups_inner([],f,loc)
    
-def create_groups_inner(visited,name,plot):
-    if not plot.name==name:
+def create_groups_inner(visited,name,loc):
+    if not map[loc[0]][loc[1]]==name:
         return []
-    group = [plot]
-    for side in plot.get_sides():
-        if side.name==name:
+    group = [loc]
+    sides = get_sides(loc)
+    for side in sides:
+        if map[side[0]][side[1]]==name:
             if side not in group: 
                 if not (visited and side in visited):
                     vis = copy.deepcopy(visited)
-                    vis.append(plot)
-                    group += create_groups_inner(vis,name,side)
-    print('group:',group)
+                    vis.append(loc)
+                    g = create_groups_inner(vis,name,side)
+                    group += g
+            
     return group
 
-def get_num_perim_sides(plot,locs):
-    num = 4
-    for side in plot.get_sides():   
-        if side in locs:
-            num -=1
-    return num
+def get_sides(loc):
+    sides = []
+    for dir in [[0,1],[0,-1],[1,0],[-1,0]]:
+        side = [sum(x) for x in zip(loc, dir)]
+        if (side[0] in range(len(map)) and 
+            side[1] in range(len(map[0]))):
+            sides.append(side)
+    return sides
 
-create_plots()
+def get_group(loc):
+    for group,locs in groups:
+        if map[loc[0]][loc[1]] in locs:
+            return group
+        
+def is_diag_in_shape(side1, side2, loc, locs):
+    diag = [0,0]
+    diag[0] = (loc[0]-(side2[0]-loc[0]) if side1[0]==loc[0] else loc[0]-(side1[0]-loc[0]))
+    diag[1] = (loc[1]-(side2[1]-loc[1]) if side1[1]==loc[1] else loc[1]-(side1[1]-loc[1]))
+    if diag in locs:
+        return True
+    return False
+def is_diag_adjacent(side1,side2):
+    if side1[0]==side2[0] or side1[1]==side2[1]:
+        return False
+    return True
+'''def is_triag_in_shape(side1, loc, locs):
+    sides = get_sides(loc)
+    adj_sides = [side for side in sides if not is_diag_adjacent(side, side1)]
+'''
+
+
+
+def get_outside_corners(loc,locs):
+    sides = get_sides(loc)
+    sides = [side for side in sides if side in locs]
+    corners = -1
+    if len(sides) == 0:
+        corners = 4
+    elif len(sides) == 1:
+        corners = 2
+    elif len(sides) == 2:
+        # if 2 sides across from each other other about loc
+        if is_diag_adjacent(sides[0],sides[1]):
+            corners = 0
+        # if 2 sides next to each other about loc
+        else:
+            # if the opposite corner is part of shape
+            if is_diag_in_shape(sides[0],sides[1],loc,locs):
+                corners = 0
+            else:
+                corners = 1
+            #corners = 1
+    elif len(sides) == 3:
+        corners = 0
+    elif len(sides) == 4:
+        corners = 0
+    print('outside corners:',corners)
+    return corners
+
+def get_inside_corners(loc,locs):
+    sides = get_sides(loc)
+    sides = [side for side in sides if side in locs]
+    corners = -1
+    if len(sides) == 0:
+        print('oops')
+    elif len(sides) == 1:
+        corners = 0
+    elif len(sides) == 2:
+        if is_diag_adjacent(sides[0],sides[1]):
+            corners = 0
+        else:
+            #print('diagonal corner')
+
+            corners = 1
+    elif len(sides) == 3:
+        #print('tri corner')
+        corners = 2
+    elif len(sides) == 4:
+        #print(loc)
+        #print('four corner')
+        corners = 4
+    return corners
+
+def get_num_inside_corners(locs):
+    outside_edge = []
+    for loc in locs:
+        for side in get_sides(loc):
+            if (side[0] in range(len(map)) and 
+                side[1] in range(len(map[0])) and 
+                side not in locs and 
+                side not in outside_edge):
+                outside_edge.append(side)
+
+    corners = 0
+    for loc in outside_edge:
+        corners+= get_inside_corners(loc,locs)
+    print('inside corners:',corners)
+    return corners
+
 create_groups()
+
 price = 0
-for group, plots in groups.items():
-    perim = 0
-    area = len(plots)
-    for plot in plots:
-        perim += get_num_perim_sides(plot,plots)
-    price += area*perim
-    print(group,' price = area ',area,' * perim ',perim)
+for group, locs in groups.items():
+    corners = 0
+    area = len(locs)
+    for loc in locs:
+        corners += get_outside_corners(loc,locs)
+    corners += get_num_inside_corners(locs)
+    price += area*corners
+    print(group,' price = area ',area,' * sides ',corners)
 print(price)
 
-
 '''
+
+
 AAAA
 BBCD
 BBCC
 EEEC
 
-.x.x.x.x.
-xA.A.A.Ax
-.x.x.x.x.
-xB.BxC.D.
-.........
-xB.BxC.D.
-.x.x.....
-.E.E.E.C.
-.........
+A
+area=4
+perim=10
+outside corners=4
+sides=4
 
-make graphs of each region
-area = total num in group
-perimeter = sum of sides of all in group that do not border same type
+B
+area=4
+perim=8
+outside corners=4
+sides=4
+
+C
+area=4
+perim=10
+outside corners=6
+sides=8
+
+D
+area=1
+perim=10
+outside corners=4
+sides=4
+
+E
+area=3
+perim=8
+outside corners=4
+sides=4
+
+4 outside corners
+
+845887 too high
 
 '''
